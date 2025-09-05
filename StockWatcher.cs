@@ -16,7 +16,8 @@ public class StockWatcher
     public static HttpClient? HttpClient {get; set;}
     public static SmtpClient? SmtpClient {get; set;}
     public static double Tolerance {get; set;}
-    public StockWatcher(string stock, double buyPrice, double sellPrice, int? secondsPeriod, string fromEmail, string toEmail)
+    protected string Token {get; set;}
+    public StockWatcher(string stock, double buyPrice, double sellPrice, int? secondsPeriod, string fromEmail, string toEmail, string token)
     {   
         Stock = stock;
         BuyPrice = buyPrice;
@@ -24,6 +25,7 @@ public class StockWatcher
         SecondsPeriod = secondsPeriod ?? 60;
         FromEmail = fromEmail;
         ToEmail = toEmail;
+        Token = token;
     }
     //function which makes the object periodically make api calls and notify the user if conditions are met
     public async Task Monitor()
@@ -41,7 +43,15 @@ public class StockWatcher
         while (true)
         {   
             //makes request
-            using var response = await HttpClient.GetAsync(Stock);
+            var request = new HttpRequestMessage(HttpMethod.Get, Stock);
+            //if there is a token specified, adds it to request
+            if (!string.IsNullOrEmpty(Token))
+            {
+                request.Headers.Add("Authorization", $"Bearer {Token}");
+                
+            }
+
+            using var response = await HttpClient.SendAsync(request);
             //if there is an error, log it on console and stop monitoring
             try
             {
@@ -55,7 +65,7 @@ public class StockWatcher
             //extract price from response
             var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             var price = json.GetProperty("results")[0].GetProperty("regularMarketPrice").GetDouble();
-            Console.WriteLine(price);
+            Console.WriteLine($"Current price: {price}");
             //logic for sending email
             //price just reached the minimum for buying
             if (price <= BuyPrice && !BuyTriggered)
