@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# config for smtp
+SmtpConfig.json
+
 # dotenv files
 .env
 
