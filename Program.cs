@@ -55,13 +55,19 @@ rootCommand.Add(buyPriceArg);
 rootCommand.Add(timeArg);
 rootCommand.Add(tokenArg);
 var parseResult = rootCommand.Parse(args);
-
 //if there are any errors, print the program tooltip
 if (parseResult.Errors.Count != 0)
 {
     Console.WriteLine("Program didn't receive the correct arguments");
     rootCommand.Parse("-h").Invoke();
     return 1;
+}
+
+//checks if help flag was passed
+if (parseResult.Tokens.Any(t => t.Value is "--help" or "-?" or "-h"))
+{
+    rootCommand.Parse("-h").Invoke();
+    return 0;
 }
 
 //get the actual values from the args
