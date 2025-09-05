@@ -1,12 +1,17 @@
 ﻿using System.CommandLine;
 using InoaChallenge;
 using Microsoft.Extensions.Configuration;
+using MailKit.Net.Smtp;
+using System.Globalization;
 const string API = "https://brapi.dev/api/quote/";
 
-//smtp client
+//sets culture so double won't be interpreted with a comma
+var culture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+//smtp config json reading
 var smtpConfig = new ConfigurationBuilder().AddJsonFile("SmtpConfig.json").Build();
 
-Console.WriteLine(smtpConfig["host"]);
 //reads command line arguments
 var stockArg = new Argument<string>("stock"){Description = "The stock to monitor"};
 var sellPriceArg = new Argument<double> ("SellPrice"){Description = "The price which triggers sell email"}; 
@@ -46,13 +51,14 @@ if (sellPrice < 0 || buyPrice < 0)
 
 //initialize the http client
 var httpClient = new HttpClient(){BaseAddress = new Uri(API)};
-StockWatcher.Client = httpClient;
-
-
-
-
-//initialize stock water object
-var watcher = new StockWatcher(stock, buyPrice, sellPrice, null);
+StockWatcher.HttpClient = httpClient;
+//initialize  the SmtpCLient
+var smtpClient = new SmtpClient();
+smtpClient.Connect(smtpConfig["host"], Convert.ToInt32(smtpConfig["port"]), Convert.ToBoolean(smtpConfig["UseSsl"]));
+smtpClient.Authenticate(smtpConfig["User"], smtpConfig["Password"]);
+StockWatcher.SmtpClient = smtpClient;
+//initialize stock watcher object
+var watcher = new StockWatcher(stock, buyPrice, sellPrice, null, "gustavobgrande@gmail.com", "gustavobgrande@gmail.com");
 await watcher.Monitor();
 
 return 0;

@@ -1,5 +1,5 @@
 ﻿using System.Net.Http.Json;
-
+using MailKit.Net.Smtp; 
 namespace InoaChallenge;
 
 //class which makes api calls and notifies the user 
@@ -11,27 +11,37 @@ public class StockWatcher
     public bool SellTriggered { get; set; }
     public string Stock { get; set; }
     public int SecondsPeriod { get; set; }
-    public static HttpClient? Client {get; set;}
-    
-    public StockWatcher(string stock, double buyPrice, double sellPrice, int? secondsPeriod )
+    public string FromEmail { get; set; }
+    public string ToEmail { get; set; }
+    public static HttpClient? HttpClient {get; set;}
+    public static SmtpClient? SmtpClient {get; set;}
+    public static double Tolerance {get; set;}
+    public StockWatcher(string stock, double buyPrice, double sellPrice, int? secondsPeriod, string fromEmail, string toEmail)
     {   
         Stock = stock;
         BuyPrice = buyPrice;
         SellPrice = sellPrice;
         SecondsPeriod = secondsPeriod ?? 60;
+        FromEmail = fromEmail;
+        ToEmail = toEmail;
     }
     //function which makes the object periodically make api calls and notify the user if conditions are met
     public async Task Monitor()
     {
-        //http client must be set up before monitoring object
-        if (Client is null)
+        //http client and smtp must be set up before monitoring
+        if (HttpClient is null)
         {
             throw new InvalidOperationException("HttpClient is not initialized");
+        }
+
+        if (SmtpClient is null)
+        {
+            throw new InvalidOperationException("SmtpClient is not initialized");
         }
         while (true)
         {   
             //makes request
-            using var response = await Client.GetAsync(Stock);
+            using var response = await HttpClient.GetAsync(Stock);
             //if there is an error, log it on console and stop monitoring
             try
             {
@@ -44,8 +54,37 @@ public class StockWatcher
             }
             //extract price from response
             var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-            var price = json.GetProperty("results")[0].GetProperty("regularMarketPrice");
-            Console.WriteLine(price.ToString());
+            var price = json.GetProperty("results")[0].GetProperty("regularMarketPrice").GetDouble();
+            Console.WriteLine(price);
+            //logic for sending email
+            //price just reached the minimum for buying
+            if (price <= BuyPrice && !BuyTriggered)
+            {
+                Console.WriteLine($"{price} <= {BuyPrice} sending buy email");
+                BuyTriggered = true;
+                var buyEmail = EmailFactory.CreateBuyEmail(FromEmail, ToEmail, Stock, BuyPrice);
+                await SmtpClient.SendAsync(buyEmail);
+            }
+            //price went back up, but it was triggered before, so it needs to be updated if it drops again
+            //3% tolerance to avoid spamming emails if price fluctuates
+            else if (Math.Abs(price - BuyPrice) > Tolerance * BuyPrice && BuyTriggered)
+            {
+                BuyTriggered = false;
+            }
+            //price has reached minimum for selling 
+            if (price >= SellPrice && !SellTriggered)
+            {
+                Console.WriteLine($"{price} >= {SellPrice} sending sell email");
+                SellTriggered = true;
+                var sellEmail = EmailFactory.CreateSellEmail(FromEmail, ToEmail, Stock, SellPrice);
+                await SmtpClient.SendAsync(sellEmail);
+            }
+            //same logic as before
+            else if (Math.Abs(price - SellPrice) > Tolerance * SellPrice && SellTriggered)
+            {
+                SellTriggered = false;
+            }
+            //sleeps until the next api call
             Thread.Sleep(TimeSpan.FromSeconds(SecondsPeriod));
         }
         
