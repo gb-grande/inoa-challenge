@@ -4,6 +4,7 @@ Desafio de programação desenvolvido para o processo seletivo de estágio da In
 ## Como configurar o servidor SMTP a ser usado
 
 O arquivo SmtpConfig.json é um arquivo de exemplo, ele contém os campos modificáveis como host, porta, usuário, senha, email do remetente, email do destinatário e se é para usar SSL.
+É necessário configurar o arquivo antes de executar o build.
 
 ## Como compilar em um executável
 
