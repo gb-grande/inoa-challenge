@@ -1,0 +1,7 @@
+﻿{
+  "Host" : "host",
+  "Port" : 1234,
+  "User" : "username@email.com",
+  "Password" : "password",
+  "From" : "username@email.com"
+}

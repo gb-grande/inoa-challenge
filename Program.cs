@@ -1,8 +1,12 @@
 ﻿using System.CommandLine;
 using InoaChallenge;
-
+using Microsoft.Extensions.Configuration;
 const string API = "https://brapi.dev/api/quote/";
 
+//smtp client
+var smtpConfig = new ConfigurationBuilder().AddJsonFile("SmtpConfig.json").Build();
+
+Console.WriteLine(smtpConfig["host"]);
 //reads command line arguments
 var stockArg = new Argument<string>("stock"){Description = "The stock to monitor"};
 var sellPriceArg = new Argument<double> ("SellPrice"){Description = "The price which triggers sell email"}; 
@@ -43,6 +47,10 @@ if (sellPrice < 0 || buyPrice < 0)
 //initialize the http client
 var httpClient = new HttpClient(){BaseAddress = new Uri(API)};
 StockWatcher.Client = httpClient;
+
+
+
+
 //initialize stock water object
 var watcher = new StockWatcher(stock, buyPrice, sellPrice, null);
 await watcher.Monitor();
