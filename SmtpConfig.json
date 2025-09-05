@@ -1,7 +1,8 @@
 ﻿{
-  "Host" : "host",
-  "Port" : 1234,
-  "User" : "username@email.com",
-  "Password" : "password",
-  "From" : "username@email.com"
+  "Host" : "smtp.gmail.com",
+  "Port" : 465,
+  "User" : "gustavobgrande@gmail.com",
+  "Password" : "NOTMYPASSWORD",
+  "From" : "gustavobgrande@gmail.com",
+  "UseSsl" : true
 }
