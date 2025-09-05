@@ -77,7 +77,7 @@ public class StockWatcher
             }
             //price went back up, but it was triggered before, so it needs to be updated if it drops again
             //3% tolerance to avoid spamming emails if price fluctuates
-            else if (Math.Abs(price - BuyPrice) > Tolerance * BuyPrice && BuyTriggered)
+            else if (price > BuyPrice && Math.Abs(price - BuyPrice) > Tolerance * BuyPrice && BuyTriggered)
             {
                 BuyTriggered = false;
             }
@@ -90,7 +90,7 @@ public class StockWatcher
                 await SmtpClient.SendAsync(sellEmail);
             }
             //same logic as before
-            else if (Math.Abs(price - SellPrice) > Tolerance * SellPrice && SellTriggered)
+            else if (price < SellPrice && Math.Abs(price - SellPrice) > Tolerance * SellPrice && SellTriggered)
             {
                 SellTriggered = false;
             }
